@@ -1,7 +1,7 @@
 // API utility functions
 // Replace these mock functions with actual API calls to your MySQL backend
 
-import { User, Citizen, Bill, Fastag, Feedback, Notification, ErrorLog } from "@/types";
+import { User, Citizen, Bill, Fastag, Feedback, Notification, ErrorLog, Property } from "@/types";
 import { toast } from "@/hooks/use-toast";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
@@ -51,6 +51,35 @@ export const authenticateUser = async (userId: string, password: string): Promis
   }
 };
 
+// Fetch properties for a citizen - connects to property table
+export const fetchProperties = async (citizenId: string): Promise<Property[]> => {
+  try {
+    // TODO: Replace with actual API call
+    // const response = await fetch(`${API_BASE_URL}/properties/${citizenId}`);
+    // if (!response.ok) throw new Error('Failed to fetch properties');
+    // return await response.json();
+
+    // Mock implementation
+    return [
+      {
+        property_id: 'P001',
+        citizen_id: citizenId,
+        address: '123 Main Street, Apartment 4B',
+        property_type: 'Residential',
+      },
+      {
+        property_id: 'P002',
+        citizen_id: citizenId,
+        address: '456 Oak Avenue, Shop No. 12',
+        property_type: 'Commercial',
+      },
+    ];
+  } catch (error) {
+    await logError('FETCH_PROPERTIES_FAIL', citizenId, 'Failed to fetch properties');
+    throw error;
+  }
+};
+
 // Fetch bills for a citizen - connects to bills table
 export const fetchBills = async (citizenId: string): Promise<Bill[]> => {
   try {
@@ -59,8 +88,9 @@ export const fetchBills = async (citizenId: string): Promise<Bill[]> => {
     // if (!response.ok) throw new Error('Failed to fetch bills');
     // return await response.json();
 
-    // Mock implementation
+    // Mock implementation - bills for multiple properties
     return [
+      // Property P001 bills
       {
         bill_id: 'B001',
         citizen_id: citizenId,
@@ -91,15 +121,36 @@ export const fetchBills = async (citizenId: string): Promise<Bill[]> => {
         issue_date: '2024-01-01',
         due_date: '2024-03-31',
       },
+      // Property P002 bills
       {
-        bill_id: 'B004',
+        bill_id: 'B005',
         citizen_id: citizenId,
-        property_id: 'P001',
-        bill_type: 'gas',
-        units_used: 85,
-        amount: 680,
+        property_id: 'P002',
+        bill_type: 'water',
+        units_used: 200,
+        amount: 600,
         issue_date: '2024-01-01',
         due_date: '2024-01-15',
+      },
+      {
+        bill_id: 'B006',
+        citizen_id: citizenId,
+        property_id: 'P002',
+        bill_type: 'electricity',
+        units_used: 450,
+        amount: 1800,
+        issue_date: '2024-01-01',
+        due_date: '2024-01-15',
+      },
+      {
+        bill_id: 'B007',
+        citizen_id: citizenId,
+        property_id: 'P002',
+        bill_type: 'property_tax',
+        units_used: 1,
+        amount: 8000,
+        issue_date: '2024-01-01',
+        due_date: '2024-03-31',
       },
     ];
   } catch (error) {

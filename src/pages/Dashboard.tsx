@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Bill } from '@/types';
-import { fetchBills, fetchFastag } from '@/utils/api';
+import { Bill, Property } from '@/types';
+import { fetchBills, fetchFastag, fetchProperties } from '@/utils/api';
 import BillCard from '@/components/dashboard/BillCard';
 import PaymentModal from '@/components/dashboard/PaymentModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Car, AlertCircle } from 'lucide-react';
+import { Car, AlertCircle, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [bills, setBills] = useState<Bill[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [fastagBalance, setFastagBalance] = useState<number>(0);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -27,12 +30,20 @@ const Dashboard = () => {
 
     setIsLoading(true);
     try {
-      const [billsData, fastagData] = await Promise.all([
+      const [billsData, fastagData, propertiesData] = await Promise.all([
         fetchBills(user.citizen_id),
         fetchFastag(user.citizen_id),
+        fetchProperties(user.citizen_id),
       ]);
 
       setBills(billsData);
+      setProperties(propertiesData);
+      
+      // Set first property as default selected
+      if (propertiesData.length > 0 && !selectedPropertyId) {
+        setSelectedPropertyId(propertiesData[0].property_id);
+      }
+      
       if (fastagData.length > 0) {
         setFastagBalance(fastagData[0].balance);
       }
@@ -52,11 +63,14 @@ const Dashboard = () => {
     loadData();
   };
 
-  const totalOutstanding = bills
+  // Filter bills by selected property
+  const filteredBills = bills.filter((bill) => bill.property_id === selectedPropertyId);
+
+  const totalOutstanding = filteredBills
     .filter((bill) => !bill.payment_date)
     .reduce((sum, bill) => sum + bill.amount, 0);
 
-  const nextDueBill = bills
+  const nextDueBill = filteredBills
     .filter((bill) => !bill.payment_date)
     .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
 
@@ -70,6 +84,32 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Property Selector */}
+      {properties.length > 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5" />
+              Your Properties
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+              <TabsList className="grid w-full grid-cols-2">
+                {properties.map((property) => (
+                  <TabsTrigger key={property.property_id} value={property.property_id}>
+                    <div className="text-left">
+                      <p className="font-medium">{property.property_type}</p>
+                      <p className="text-xs text-muted-foreground">{property.address}</p>
+                    </div>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -81,7 +121,7 @@ const Dashboard = () => {
           <CardContent>
             <p className="text-3xl font-bold">₹{totalOutstanding.toLocaleString('en-IN')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              {bills.filter((b) => !b.payment_date).length} pending bills
+              {filteredBills.filter((b) => !b.payment_date).length} pending bills
             </p>
           </CardContent>
         </Card>
@@ -140,16 +180,16 @@ const Dashboard = () => {
       {/* Bills Section */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Your Bills</h2>
-        {bills.length === 0 ? (
+        {filteredBills.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">No bills found</p>
+              <p className="text-lg text-muted-foreground">No bills found for this property</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {bills.map((bill) => (
+            {filteredBills.map((bill) => (
               <BillCard key={bill.bill_id} bill={bill} onPayClick={handlePayClick} />
             ))}
           </div>

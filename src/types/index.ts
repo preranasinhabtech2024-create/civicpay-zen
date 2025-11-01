@@ -14,6 +14,13 @@ export interface Citizen {
   email: string;
 }
 
+export interface Property {
+  property_id: string;
+  citizen_id: string;
+  address: string;
+  property_type: string;
+}
+
 export type BillType = 'water' | 'electricity' | 'property_tax' | 'gas';
 
 export interface Bill {
