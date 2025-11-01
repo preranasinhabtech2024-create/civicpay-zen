@@ -184,13 +184,25 @@ export const fetchFastag = async (citizenId: string): Promise<Fastag[]> => {
     // if (!response.ok) throw new Error('Failed to fetch Fastag');
     // return await response.json();
 
-    // Mock implementation
+    // Mock implementation - multiple vehicles
     return [
       {
         fastag_id: 'FT001',
         citizen_id: citizenId,
         vehicle_number: 'MH-01-AB-1234',
         balance: 2500,
+      },
+      {
+        fastag_id: 'FT002',
+        citizen_id: citizenId,
+        vehicle_number: 'MH-02-CD-5678',
+        balance: 450,
+      },
+      {
+        fastag_id: 'FT003',
+        citizen_id: citizenId,
+        vehicle_number: 'DL-03-EF-9012',
+        balance: 1200,
       },
     ];
   } catch (error) {

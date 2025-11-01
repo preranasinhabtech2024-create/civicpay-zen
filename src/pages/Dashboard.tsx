@@ -16,7 +16,7 @@ const Dashboard = () => {
   const [bills, setBills] = useState<Bill[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
-  const [fastagBalance, setFastagBalance] = useState<number>(0);
+  const [fastags, setFastags] = useState<any[]>([]);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,14 +38,11 @@ const Dashboard = () => {
 
       setBills(billsData);
       setProperties(propertiesData);
+      setFastags(fastagData);
       
       // Set first property as default selected
       if (propertiesData.length > 0 && !selectedPropertyId) {
         setSelectedPropertyId(propertiesData[0].property_id);
-      }
-      
-      if (fastagData.length > 0) {
-        setFastagBalance(fastagData[0].balance);
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -73,6 +70,10 @@ const Dashboard = () => {
   const nextDueBill = filteredBills
     .filter((bill) => !bill.payment_date)
     .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
+
+  // Calculate total Fastag balance across all vehicles
+  const totalFastagBalance = fastags.reduce((sum, fastag) => sum + fastag.balance, 0);
+  const lowBalanceVehicles = fastags.filter((f) => f.balance < 500);
 
   if (isLoading) {
     return (
@@ -151,27 +152,32 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className={fastagBalance < 500 ? 'border-warning' : ''}>
+        <Card className={lowBalanceVehicles.length > 0 ? 'border-warning' : ''}>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Car className="w-4 h-4" />
-              Fastag Balance
+              Fastag Balance ({fastags.length} {fastags.length === 1 ? 'Vehicle' : 'Vehicles'})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-3xl font-bold ${fastagBalance < 500 ? 'text-warning' : ''}`}>
-              ₹{fastagBalance.toLocaleString('en-IN')}
+            <p className={`text-3xl font-bold ${lowBalanceVehicles.length > 0 ? 'text-warning' : ''}`}>
+              ₹{totalFastagBalance.toLocaleString('en-IN')}
             </p>
-            {fastagBalance < 500 ? (
-              <Button
-                variant="link"
-                className="p-0 h-auto text-warning hover:text-warning/80 mt-1"
-                onClick={() => navigate('/fastag')}
-              >
-                Top up now →
-              </Button>
+            {lowBalanceVehicles.length > 0 ? (
+              <div className="mt-2 space-y-1">
+                <p className="text-sm text-warning">
+                  {lowBalanceVehicles.length} vehicle{lowBalanceVehicles.length > 1 ? 's' : ''} with low balance
+                </p>
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-warning hover:text-warning/80"
+                  onClick={() => navigate('/fastag')}
+                >
+                  Top up now →
+                </Button>
+              </div>
             ) : (
-              <p className="text-sm text-success mt-1">Sufficient balance</p>
+              <p className="text-sm text-success mt-1">All vehicles have sufficient balance</p>
             )}
           </CardContent>
         </Card>
